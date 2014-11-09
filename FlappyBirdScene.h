@@ -23,6 +23,12 @@ public:
     cocos2d::Texture2D *pipeTextureUp;
     cocos2d::Texture2D *pipeTextureDown;
     cocos2d::Sequence *movePipesAndRemove;
+    
+    int birdCategory;
+    int worldCategory;
+    int pipeCategory;
+    int scoreCategory;
+    
     // function
     void removePipe(cocos2d::Node *pipe);
     void spawnPipes();

@@ -8,19 +8,21 @@
 
 #include "FlappyBirdScene.h"
 
+#define FORCE 30.0
+
 USING_NS_CC;
 
 Scene* FlappyBird::createScene()
 {
     // 'scene' is an autorelease object
-    auto scene = Scene::create();
-//    auto world = scene->getPhysicsWorld();
+    auto scene = Scene::createWithPhysics();
+    auto world = scene->getPhysicsWorld();
     
     // 'layer' is an autorelease object
     auto layer = FlappyBird::create();
     
-//    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
-//    world->setGravity(Point(0, -5.0));
+    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
+    world->setGravity(Point(0, -9.0*FORCE));
 //    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
     
     // add layer as a child to scene
@@ -40,6 +42,11 @@ bool FlappyBird::init()
         return false;
     }
     
+    birdCategory = 1 << 0;
+    worldCategory = 1 << 1;
+    pipeCategory = 1 << 2;
+    scoreCategory = 1 << 3;
+    
     this->Run();
 
     return true;
@@ -49,6 +56,14 @@ bool FlappyBird::init()
 void FlappyBird::Run() {
 //    auto skyColor = Color3B(81.0, 192.0/255.0, 201.0/255.0);
     glClearColor(81.0/255.0, 192.0/255.0, 201.0/255.0, 1.0);
+    
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    
+    auto body = PhysicsBody::createEdgeBox(visibleSize, PHYSICSBODY_MATERIAL_DEFAULT, 3);
+    auto edgeNode = Node::create();
+    edgeNode->setPosition(Point(visibleSize.width/2, visibleSize.height/2));
+    edgeNode->setPhysicsBody(body);
+    this->addChild(edgeNode);
     
     auto groundTexture = new Texture2D();
     groundTexture = Director::getInstance()->getTextureCache()->addImage("land.png");
@@ -62,6 +77,7 @@ void FlappyBird::Run() {
         auto sprite = Sprite::createWithTexture(groundTexture);
         sprite->setScale(3.0);
         sprite->setPosition(Point(i*sprite->getContentSize().width, sprite->getContentSize().height / 2.0));
+        sprite->setPositionZ(0);
         sprite->runAction(moveGroundSpriteForever);
         this->addChild(sprite);
     }
@@ -97,6 +113,53 @@ void FlappyBird::Run() {
     auto spawnThenDelay = Sequence::create(spawn, delay, NULL);
     auto spawnThenDelayForever = RepeatForever::create(spawnThenDelay);
     this->runAction(spawnThenDelayForever);
+    
+    // setup our bird
+    auto birdTexture1 = new Texture2D();
+    auto birdTexture2 = new Texture2D();
+    birdTexture1 = Director::getInstance()->getTextureCache()->addImage("bird-01.png");
+    birdTexture2 = Director::getInstance()->getTextureCache()->addImage("bird-02.png");
+    
+    Rect rect = Rect::ZERO;
+    rect.size = birdTexture1->getContentSize();
+    
+    auto anim = Animation::create();
+    anim->setDelayPerUnit(0.2);
+    anim->addSpriteFrameWithTexture(birdTexture1, rect);
+    anim->addSpriteFrameWithTexture(birdTexture2, rect);
+    
+    auto repeatedAnimation = RepeatForever::create(Animate::create(anim));
+    
+    bird = Sprite::createWithTexture(birdTexture1);
+    bird->setScale(2.0);
+    bird->setPosition(this->getContentSize().width * 0.35, this->getContentSize().height * 0.6);
+    bird->setPositionZ(10);
+    bird->runAction(repeatedAnimation);
+    
+    bird->setPhysicsBody(PhysicsBody::createCircle(2.0*bird->getContentSize().height/2.0));
+    bird->getPhysicsBody()->setDynamic(true);
+    bird->getPhysicsBody()->setRotationEnable(false);
+    
+    bird->getPhysicsBody()->setCategoryBitmask(birdCategory);
+    bird->getPhysicsBody()->setCollisionBitmask(worldCategory | pipeCategory);
+    bird->getPhysicsBody()->setContactTestBitmask(worldCategory | pipeCategory);
+    
+    this->addChild(bird);
+    
+    auto ground = Node::create();
+    ground->setPosition(groundTexture->getContentSize().width/2.0, groundTexture->getContentSize().height/2.0);
+    ground->setPhysicsBody(PhysicsBody::createBox(Size(this->getContentSize().width, 2.4*groundTexture->getContentSize().height * 1.0)));
+    ground->getPhysicsBody()->setDynamic(false);
+    ground->getPhysicsBody()->setCategoryBitmask(worldCategory);
+    this->addChild(ground);
+    
+    // Touch Events (Single)
+    auto listener = EventListenerTouchOneByOne::create();
+    listener->setSwallowTouches(true);
+    listener->onTouchBegan = CC_CALLBACK_2(FlappyBird::onTouchBegan, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
+    
+    scheduleUpdate();
 }
 
 // function
@@ -104,6 +167,8 @@ void FlappyBird::removePipe(cocos2d::Node *pipe) {
     this->removeChild(pipe);
 }
 void FlappyBird::spawnPipes() {
+//    CCLOG("spawn pipes : %f", this->getContentSize().width);
+    
     auto distanceToMove = (float)(this->getContentSize().width + 2.0 * pipeTextureUp->getContentSize().width);
     auto movePipes = MoveBy::create(0.01 * distanceToMove, Point(-distanceToMove, 0));
     auto removePipes = CallFuncN::create(CC_CALLBACK_1(FlappyBird::removePipe, this));
@@ -121,28 +186,54 @@ void FlappyBird::spawnPipes() {
     auto pipeDown = Sprite::createWithTexture(pipeTextureDown);
     pipeDown->setScale(3.0);
     pipeDown->setPosition(0.0, (float)y + pipeDown->getContentSize().height + float(verticalPipeGap));
+    pipeDown->setPositionZ(-10);
     
     PhysicsBody *pipeDownBody = PhysicsBody::createBox(Size(2.0 * pipeDown->getContentSize().width, 2.0 * pipeDown->getContentSize().height));
     pipeDownBody->setDynamic(false);
     pipeDown->setPhysicsBody(pipeDownBody);
+    pipeDown->getPhysicsBody()->setCategoryBitmask(pipeCategory);
+    pipeDown->getPhysicsBody()->setContactTestBitmask(birdCategory);
+    
     pipePair->addChild(pipeDown);
     
     auto pipeUp = Sprite::createWithTexture(pipeTextureUp);
     pipeUp->setScale(3.0);
     pipeUp->setPosition(0.0, (float)y);
+    pipeUp->setPositionZ(-10);
     
     PhysicsBody *pipeUpBody = PhysicsBody::createBox(Size(2.0 * pipeUp->getContentSize().width, 2.0 * pipeUp->getContentSize().height));
     pipeUpBody->setDynamic(false);
     pipeUp->setPhysicsBody(pipeUpBody);
+    pipeUp->getPhysicsBody()->setCategoryBitmask(pipeCategory);
+    pipeUp->getPhysicsBody()->setContactTestBitmask(birdCategory);
     pipePair->addChild(pipeUp);
+    
+    auto contactNode = Node::create();
+    contactNode->setPosition(pipeDown->getContentSize().width + bird->getContentSize().width/2, this->getContentSize().height/2);
+//    contactNode->setphy
     
     pipePair->runAction(movePipesAndRemove);
     this->addChild(pipePair);
     
 }
-void FlappyBird::update(float delta) {}
-
-// Touches
-bool FlappyBird::onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *unused_event) {return true;}
+float clamp(float min, float max, float value) {
+    if (value > max) {
+        return max;
+    } else if (value < min) {
+        return min;
+    } else {
+        return value;
+    }
+}
+void FlappyBird::update(float delta) {
+    bird->setRotation(clamp(-40, 40, -bird->getPhysicsBody()->getVelocity().y));
+}// Touches
+bool FlappyBird::onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *unused_event) {
+    
+    bird->getPhysicsBody()->setVelocity(Vect(0,0));
+    bird->getPhysicsBody()->applyImpulse(Vect(0, 700*FORCE));
+    
+    return true;
+}
 void FlappyBird::onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unused_event) {}
 void FlappyBird::onTouchEnded(cocos2d::Touch *touch, cocos2d::Event *unused_event) {}
