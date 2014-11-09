@@ -28,14 +28,19 @@ public:
     int worldCategory;
     int pipeCategory;
     int scoreCategory;
+    int blink;
     
     // function
+    void Blink();
+    void die();
     void removePipe(cocos2d::Node *pipe);
     void spawnPipes();
     void update(float delta);
     
     void Run();
     
+    // Contact Listener
+    bool onContactBegin(cocos2d::PhysicsContact &contact);
     // Touches
     bool onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *unused_event);
     void onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unused_event);

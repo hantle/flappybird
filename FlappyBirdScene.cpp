@@ -159,10 +159,49 @@ void FlappyBird::Run() {
     listener->onTouchBegan = CC_CALLBACK_2(FlappyBird::onTouchBegan, this);
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
     
+    auto contactListener = EventListenerPhysicsContact::create();
+    contactListener->onContactBegin = CC_CALLBACK_1(FlappyBird::onContactBegin, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener, this);
+    
     scheduleUpdate();
 }
 
 // function
+bool FlappyBird::onContactBegin(PhysicsContact &contact) {
+    if ((contact.getShapeA()->getCategoryBitmask() & scoreCategory) == scoreCategory || (contact.getShapeB()->getCategoryBitmask() & scoreCategory) == scoreCategory) {
+//        score++
+        
+    } else {
+        bird->getPhysicsBody()->setCollisionBitmask(worldCategory);
+        
+        auto rotate = RotateBy::create(1, (M_PI)*bird->getPosition().y*0.01);
+        auto callback = CallFunc::create(CC_CALLBACK_0(FlappyBird::die, this));
+        bird->runAction(Sequence::createWithTwoActions(rotate, callback));
+        
+        // Flash background if contact is detected
+        this->removeChildByTag(10);
+        
+        auto bgSequence = Sequence::createWithTwoActions(CallFunc::create(CC_CALLBACK_0(FlappyBird::Blink, this)), DelayTime::create(0.5));
+        auto backgroundAnimtaion = Repeat::create(bgSequence, 6);
+        this->runAction(backgroundAnimtaion);
+    }
+    
+    return true;
+}
+void FlappyBird::Blink() {
+    if (blink) {
+        glClearColor(81.0/255.0, 192.0/255.0, 201.0/255.0, 1.0);
+        blink = 0;
+    } else {
+        glClearColor(1, 0, 0, 1);
+        blink = 1;
+    }
+}
+void FlappyBird::die() {
+//    bird->speed = 0;
+    bird->setRotation(0);
+    CCLOG("die");
+}
 void FlappyBird::removePipe(cocos2d::Node *pipe) {
     this->removeChild(pipe);
 }
@@ -210,12 +249,17 @@ void FlappyBird::spawnPipes() {
     
     auto contactNode = Node::create();
     contactNode->setPosition(pipeDown->getContentSize().width + bird->getContentSize().width/2, this->getContentSize().height/2);
-//    contactNode->setphy
+    contactNode->setPhysicsBody(PhysicsBody::createBox(Size(pipeUp->getContentSize().width, this->getContentSize().height)));
+    contactNode->getPhysicsBody()->setDynamic(false);
+    contactNode->getPhysicsBody()->setCategoryBitmask(scoreCategory);
+    contactNode->getPhysicsBody()->setContactTestBitmask(birdCategory);
+    pipePair->addChild(contactNode);
     
     pipePair->runAction(movePipesAndRemove);
     this->addChild(pipePair);
     
 }
+
 float clamp(float min, float max, float value) {
     if (value > max) {
         return max;
