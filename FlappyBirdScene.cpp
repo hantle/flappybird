@@ -8,6 +8,7 @@
 
 #include "FlappyBirdScene.h"
 
+#define SCALE 2.0
 #define FORCE 30.0
 
 USING_NS_CC;
