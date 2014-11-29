@@ -23,14 +23,24 @@ public:
     cocos2d::Texture2D *pipeTextureUp;
     cocos2d::Texture2D *pipeTextureDown;
     cocos2d::Sequence *movePipesAndRemove;
+    cocos2d::Node *moving;
+    cocos2d::Node *pipes;
+    cocos2d::LabelTTF *scoreLabelNode;
+    cocos2d::RepeatForever *spawnThenDelayForever;
+    
     
     int birdCategory;
     int worldCategory;
     int pipeCategory;
     int scoreCategory;
     int blink;
-    
+    int birdspeed;
+    int movingspeed;
+    bool canRestart;
+    int score;
     // function
+    void resetScene();
+    void setRestart();
     void Blink();
     void die();
     void removePipe(cocos2d::Node *pipe);
@@ -43,8 +53,6 @@ public:
     bool onContactBegin(cocos2d::PhysicsContact &contact);
     // Touches
     bool onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *unused_event);
-    void onTouchMoved(cocos2d::Touch *touch, cocos2d::Event *unused_event);
-    void onTouchEnded(cocos2d::Touch *touch, cocos2d::Event *unused_event);
     // end
     CREATE_FUNC(FlappyBird);
 };
