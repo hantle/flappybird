@@ -58,8 +58,7 @@ bool FlappyBird::init()
     pipes->retain();
     moving->addChild(pipes);
     
-    
-    scoreLabelNode = LabelTTF::create("0", "Marker Felt", 60);
+    scoreLabelNode = Label::createWithTTF("0", "Marker Felt", 60);
     scoreLabelNode->setPosition(Point(this->getContentSize().width/2.0, 3.0*this->getContentSize().height/4.0));
     scoreLabelNode->setPositionZ(100);
     this->addChild(scoreLabelNode);

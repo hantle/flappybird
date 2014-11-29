@@ -25,7 +25,7 @@ public:
     cocos2d::Sequence *movePipesAndRemove;
     cocos2d::Node *moving;
     cocos2d::Node *pipes;
-    cocos2d::LabelTTF *scoreLabelNode;
+    cocos2d::Label *scoreLabelNode;
     cocos2d::RepeatForever *spawnThenDelayForever;
     
     
