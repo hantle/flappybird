@@ -21,8 +21,8 @@ Scene* FlappyBird::createScene()
     // 'layer' is an autorelease object
     auto layer = FlappyBird::create();
     
-//    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
-    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_NONE);
+    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
+//    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_NONE);
     world->setGravity(Point(0, -5.0*FORCE));
     
     // add layer as a child to scene
@@ -58,7 +58,8 @@ bool FlappyBird::init()
     pipes->retain();
     moving->addChild(pipes);
     
-    scoreLabelNode = Label::createWithTTF("0", "Marker Felt", 60);
+    scoreLabelNode = LabelTTF::create("0", "Marker Felt", 60);
+//    scoreLabelNode = Label::createWithTTF("0", "Marker Felt", 60);
     scoreLabelNode->setPosition(Point(this->getContentSize().width/2.0, 3.0*this->getContentSize().height/4.0));
     scoreLabelNode->setPositionZ(100);
     this->addChild(scoreLabelNode);
@@ -72,6 +73,7 @@ void FlappyBird::resetScene() {
     bird->setPosition(this->getContentSize().width/2.5, this->getContentSize().height/2.0);
     bird->getPhysicsBody()->setVelocity(Vect(0,0));
     bird->getPhysicsBody()->setCollisionBitmask(worldCategory | pipeCategory);
+    
     birdspeed = 1;
     movingspeed = 1;
     canRestart = false;
