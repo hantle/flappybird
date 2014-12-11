@@ -7,6 +7,7 @@
 //
 
 #include "FlappyBirdScene.h"
+#include "AdmobAndroid/AdMobHelper.h"
 
 #define SCALE 3.0
 #define FORCE 200.0
@@ -21,8 +22,8 @@ Scene* FlappyBird::createScene()
     // 'layer' is an autorelease object
     auto layer = FlappyBird::create();
     
-    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
-//    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_NONE);
+//    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
+    world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_NONE);
     world->setGravity(Point(0, -5.0*FORCE));
     
     // add layer as a child to scene
@@ -219,6 +220,8 @@ bool FlappyBird::onContactBegin(PhysicsContact &contact) {
     } else {
         movingspeed = 0;
         // stop all animations
+//        AdMobHelper::showAd();
+
         this->stopActionByTag(99); // stop spawning pipes
         for (auto child: moving->getChildren()) { // stop moving background
             child->pause(); }
@@ -327,6 +330,7 @@ bool FlappyBird::onTouchBegan(cocos2d::Touch *touch, cocos2d::Event *unused_even
         bird->getPhysicsBody()->setVelocity(Vect(0,0));
         bird->getPhysicsBody()->applyImpulse(Vect(0, 900*FORCE));
     } else if (canRestart) {
+//    	AdMobHelper::hideAd();
         this->resetScene();
     }
     return true;
